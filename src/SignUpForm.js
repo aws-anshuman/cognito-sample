@@ -1,127 +1,117 @@
-import React, { Component } from 'react';
-import { Auth } from 'aws-amplify';
+import React, { Component } from "react";
+import { Auth } from "aws-amplify";
 
 class SignUpForm extends Component {
-    constructor(props) {
-        super(props);
-  
-        this.state = {
-            username: '',
-            password: '',
-            phone_number: '',
-            email: '',
-            confirmationCode: '',
-            verified: false
-        };
-        this.handleChange = this.handleChange.bind(this);
-        this.handleSubmit = this.handleSubmit.bind(this);
-        this.signUp = this.signUp.bind(this);
-        this.confirmSignUp = this.confirmSignUp.bind(this);
+  constructor(props) {
+    super(props);
+
+    this.state = {
+      username: "",
+      password: "",
+      phone_number: "",
+      email: "",
+      confirmationCode: "",
+      signedUp: false,
+      signUpConfirmed: false,
+    };
+
+    this.handleChange = this.handleChange.bind(this);
+    this.handleSubmit = this.handleSubmit.bind(this);
+  }
+
+  handleSubmit(e) {
+    e.preventDefault();
+    const {
+      signedUp,
+      username,
+      password,
+      email,
+      phone_number,
+      confirmationCode,
+      signUpConfirmed,
+    } = this.state;
+    if (!signedUp) {
+      Auth.signUp({
+        username: username,
+        password: password,
+        attributes: {
+          email: email,
+          phone_number: phone_number,
+        },
+      })
+        .then(() => console.log("Signed up"))
+        .catch((err) => console.log(err));
+
+      this.setState({
+        signedUp: true,
+      });
+    } else {
+      Auth.confirmSignUp(username, confirmationCode)
+        .then(() => console.log("confirmed sign up"))
+        .catch((err) => console.log(err));
+      this.setState({
+        signUpConfirmed: true,
+      });
     }
-  
-    signUp() {
-        const { username, password, email, phone_number } = this.state;  
-        Auth.signUp({
-            username: username,
-            password: password,
-            attributes: {
-                email: email,
-                phone_number: phone_number
-            }
-        })
-        .then(() => {
-            console.log('Successfully signed up');
-        })
-        .catch((err) => console.log(`Error signing up: ${ err }`))
+  }
+
+  handleChange(e) {
+    this.setState({
+      [e.target.name]: e.target.value,
+    });
+  }
+
+  render() {
+    const styles = {
+      color: "blue",
+    };
+    const { signedUp } = this.state;
+    const { signUpConfirmed } = this.state;
+    if (signUpConfirmed) {
+      return <h1>User is confirmed. User can signIn now.</h1>;
     }
-  
-    confirmSignUp() {
-        const { username, confirmationCode } = this.state;
-        Auth.confirmSignUp(username, confirmationCode)
-        .then(() => {
-            console.log('Successfully confirmed signed up')
-            this.props.handleSignup();
-        })
-        .catch((err) => console.log(`Error confirming sign up - ${ err }`))
+    if (signedUp) {
+      return (
+        <form onSubmit={this.handleSubmit}>
+          <label style={styles}>Username: </label>
+          <input name="username" type="text" onChange={this.handleChange} />
+          <br />
+          <label style={styles}>Confirmationcode: </label>
+          <input
+            name="confirmationCode"
+            type="text"
+            onChange={this.handleChange}
+          />
+          <br />
+          <button style={styles}>Confirm</button>
+        </form>
+      );
+    } else {
+      return (
+        <form onSubmit={this.handleSubmit}>
+          <label style={styles}>Username: </label>
+          <input name="username" type="text" onChange={this.handleChange} />
+          <br />
+          <br />
+          <label style={styles}>Password: </label>
+          <input name="password" type="password" onChange={this.handleChange} />
+          <br />
+          <br />
+          <label style={styles}>PhoneNo: </label>
+          <input name="phone_number" type="text" onChange={this.handleChange} />
+          <br />
+          <br />
+          <label style={styles}>Email: </label>
+          <input name="email" type="text" onChange={this.handleChange} />
+          <br />
+          <br />
+          <button style={styles}>Sign up</button>
+          <br />
+          <br />
+        </form>
+      );
     }
-  
-    handleSubmit(e) {
-      const { verified } = this.state;
-  
-        e.preventDefault();
-  
-        if (verified) {
-          this.confirmSignUp();
-          this.setState({
-             confirmationCode: '',
-             username: ''
-          });
-        } else {
-          this.signUp();
-          this.setState({
-            password: '',
-            email: '',
-            phone_number: '',
-            verified: true
-        });
-        }
-        e.target.reset();
-    }
-  
-    handleChange(e) {
-        if (e.target.id === 'username') {
-          this.setState({
-              username: e.target.value
-          });
-        } else if (e.target.id === 'password') {
-          this.setState({
-              password: e.target.value
-          });
-        } else if (e.target.id === 'phone_number') {
-          this.setState({
-              phone_number: e.target.value
-          });
-        } else if (e.target.id === 'email') {
-          this.setState({
-              email: e.target.value
-          });
-        } else if (e.target.id === 'confirmationCode') {
-          this.setState({
-              confirmationCode: e.target.value
-          });
-        }
-    }
-  
-    render() {
-      const { verified } = this.state;
-      if (verified) {
-          return (
-              <div>
-                  <form onSubmit={ this.handleSubmit }>
-                      <label>Confirmation Code</label>
-                      <input id='confirmationCode' type='text' onChange={ this.handleChange }/>
-                      <button>Confirm Sign up</button>
-                  </form>
-              </div>
-          );
-      } else {
-        return (
-          <div>
-            <form onSubmit={ this.handleSubmit }>
-                <label>Username</label>
-                <input id='username' type='text' onChange={ this.handleChange }/>
-                <label>Password</label>
-                <input id='password' type='password' onChange={ this.handleChange }/>
-                <label>Phone Number</label>
-                <input id='phone_number' type='text' onChange={ this.handleChange }/>
-                <label>Email</label>
-                <input id='email' type='text' onChange={ this.handleChange }/>
-                <button>Sign up</button>
-            </form>
-          </div>
-        );
-      }
-    }
+  }
 }
 
 export default SignUpForm;
